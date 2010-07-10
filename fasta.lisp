@@ -1,3 +1,5 @@
+(in-package :bioseq.io)
+
 (defun read-fasta (name)
   (with-open-file (in name)
     (read-fasta-stream in)))

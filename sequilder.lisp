@@ -1,3 +1,5 @@
+(in-package :bioseq.io)
+
 (declaim (optimize (speed 3) (safety 1)))
 
 (defconstant +initial-string-bulter-buffer+ 128)
