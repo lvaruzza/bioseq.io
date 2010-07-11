@@ -9,7 +9,7 @@
   :licence "GPL"
   :serial t
   :components ((:file "packages")
-	       (:file "sequilder")
+	       (:file "array-builder")
 	       (:file "fasta")))
 
 
