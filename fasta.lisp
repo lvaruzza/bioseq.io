@@ -20,12 +20,12 @@
 
 (defun fasta-sequence-append (buff ch)
   (if (valid-fasta-char ch)
-      (cons ch buff)
+      (ar-append buff ch)
       buff))
 
 (defun make-fasta-sequence (header-buff seq-buff)
   (list (copy-result header-buff)
-	(coerce (reverse seq-buff) 'string)))
+	(copy-result seq-buff)))
 
 (defun read-fasta-binary (name fun)
   (with-open-file (in name :element-type 'base-char)
@@ -34,7 +34,7 @@
 	  (position 0)
 	  (header-buff (make-instance 'array-builder :type 'base-char))
 	  (old-ch #\NewLine)
-	  (seq-buff nil))
+	  (seq-buff (make-instance 'array-builder :type 'base-char)))
       (loop 
 	 for 
 	   readed-bytes = (read-sequence buff in)
@@ -51,7 +51,7 @@
 				     (unless (eq state 'unk)
 				       (funcall fun (make-fasta-sequence header-buff seq-buff))
 				       (reset-buffer header-buff)
-				       (setf seq-buff nil))
+				       (reset-buffer seq-buff))
 				     (setf state 'header)
 				     (setf skip t)
 				     (format t  "new Starting sequence at ~a~%" position))))
@@ -62,7 +62,7 @@
 			  (unless skip
 			    (case state
 				 (header (ar-append header-buff ch))
-				 (sequence (setf seq-buff (fasta-sequence-append seq-buff ch)))
+				 (sequence (fasta-sequence-append seq-buff ch))
 				 ))
 			       
 			  (incf position)
