@@ -29,12 +29,12 @@ array-builder) &key)
       (adjust-array buff (calc-new-buff-size pos)))))
 
 
-(defmethod copy-result ((arb array-builder) result)
+(defmethod copy-result! ((arb array-builder) result)
   (with-slots (buff pos) arb
     (loop for i from 0 to (1- pos)
 	 do (setf (aref result i) (aref buff i)))))
 
-(defmethod make-result-copy ((arb array-builder))
+(defmethod copy-result ((arb array-builder))
   (with-slots (buff pos) arb
     (subseq buff 0 pos)))
 
@@ -49,7 +49,7 @@ array-builder) &key)
       (reset-buffer arb)
       result)))
 
-(defmethod copy-and-reset2 ((arb array-builder) result)
+(defmethod copy-and-reset! ((arb array-builder) result)
   (with-slots (pos) arb
     (when (/= (array-dimension result 0) pos)
       (adjust-array result pos))
@@ -63,11 +63,19 @@ array-builder) &key)
     (print buff)
     (print pos)))
 
+#|
+--------------------------------------------------------
+
+Tests
+
+--------------------------------------------------------
+|#
+
 (defun test1 ()
   (let ((ar (make-instance 'array-builder)))
     (ar-append ar #\A)
     (ar-append ar #\B)
-    (print (make-result-copy ar))))
+    (print (copy-result ar))))
 
 (defun test2 ()
   (let ((ar (make-instance 'array-builder)))
