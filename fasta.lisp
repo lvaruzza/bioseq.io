@@ -1,20 +1,5 @@
 (in-package :bioseq.io)
 
-(defun read-fasta (name)
-  (with-open-file (in name)
-    (read-fasta-stream in)))
-
-
-(defun read-fasta-stream (in)
-  (loop for
-       line = (read-line in nil nil)
-       while line
-       do (progn
-	    (print line))))
-
-(defun string-buffer-append (buff ch)
-  (cons ch buff))
-
 (defun valid-fasta-char (ch)
   (not (or (eq ch #\Space) (eq ch #\NewLine) (eq ch #\Tab))))
 
@@ -27,21 +12,30 @@
   (list (copy-result header-buff)
 	(copy-result seq-buff)))
 
-(defun read-fasta-binary (name fun)
-  (with-open-file (in name :element-type 'base-char)
-    (let ((buff (make-array 15 :element-type 'base-char))
+(defun read-fasta-sequences (name fun &key (buffer-size #.(* 10 1024 1024)))
+  (let ((element-type 'base-char)) ;; (unsigned-byte 8)))
+    (with-open-file (in name :element-type element-type)
+      (process-fasta-stream-binary in
+				   (lambda (header seq)
+				     (funcall fun (make-fasta-sequence header seq)))
+				   :element-type element-type :buff-size buffer-size))))
+
+
+(defun process-fasta-stream-binary (in fun &key element-type buff-size)
+    (let ((buff (make-array buff-size :element-type element-type))
 	  (state 'unk)
 	  (position 0)
-	  (header-buff (make-instance 'array-builder :type 'base-char))
+	  (header-buff (make-instance 'array-builder :type element-type))
 	  (old-ch #\NewLine)
-	  (seq-buff (make-instance 'array-builder :type 'base-char)))
+	  (seq-buff (make-instance 'array-builder :type element-type)))
       (loop 
 	 for 
 	   readed-bytes = (read-sequence buff in)
 	   while (> readed-bytes 0)
 	   do (progn 
 		(loop 
-		   for ch across buff
+		   for ii from 0 to (1- readed-bytes)
+		   for ch = (aref buff ii)
 		   for skip = nil
 		     do (progn
 			  
@@ -49,12 +43,12 @@
 			    (#\> (progn
 				   (when (eq old-ch #\NewLine)
 				     (unless (eq state 'unk)
-				       (funcall fun (make-fasta-sequence header-buff seq-buff))
+				       (funcall fun header-buff seq-buff)
 				       (reset-buffer header-buff)
 				       (reset-buffer seq-buff))
 				     (setf state 'header)
 				     (setf skip t)
-				     (format t  "new Starting sequence at ~a~%" position))))
+				     )))
 			    (#\NewLine (when (eq state 'header)
 					   (setf state 'sequence)
 					   (setf skip t))))
@@ -69,8 +63,8 @@
 			  (setf old-ch ch)
 			  ))
 		))
-      (funcall fun (make-fasta-sequence header-buff seq-buff))
-      position)))
+      (funcall fun header-buff seq-buff)
+      position))
 
 
 
