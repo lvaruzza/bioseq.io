@@ -12,22 +12,23 @@
   (list (copy-result header-buff)
 	(copy-result seq-buff)))
 
+(defconstant +read-fasta-element-type+ 'base-char)
+
 (defun read-fasta-sequences (name fun &key (buffer-size #.(* 10 1024 1024)))
-  (let ((element-type 'base-char)) ;; (unsigned-byte 8)))
-    (with-open-file (in name :element-type element-type)
-      (process-fasta-stream-binary in
-				   (lambda (header seq)
-				     (funcall fun (make-fasta-sequence header seq)))
-				   :element-type element-type :buff-size buffer-size))))
+  (with-open-file (in name :element-type +read-fasta-element-type+)
+    (process-fasta-stream in
+			  (lambda (header seq)
+			    (funcall fun (make-fasta-sequence header seq)))
+			  :seq-element-type 'base-char :buff-size buffer-size)))
 
 
-(defun process-fasta-stream-binary (in fun &key element-type buff-size)
-    (let ((buff (make-array buff-size :element-type element-type))
+(defun process-fasta-stream (in fun &key seq-element-type buff-size)
+    (let ((buff (make-array buff-size :element-type +read-fasta-element-type+))
 	  (state 'unk)
 	  (position 0)
-	  (header-buff (make-instance 'array-builder :type element-type))
+	  (header-buff (make-instance 'array-builder :type +read-fasta-element-type+))
 	  (old-ch #\NewLine)
-	  (seq-buff (make-instance 'array-builder :type element-type)))
+	  (seq-buff (make-instance 'array-builder :type seq-element-type)))
       (loop 
 	 for 
 	   readed-bytes = (read-sequence buff in)
